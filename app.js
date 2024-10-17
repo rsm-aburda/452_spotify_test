@@ -1,4 +1,4 @@
-const clientId = '4688046ee89041c781086e656fea3bd6'; // Replace with your Client ID
+const clientId = 'bceea381307146a283505191ab943fdd'; // Replace with your Client ID
 const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/'; // Your GitHub Pages URL
 const scopes = 'user-top-read'; // Permission to access top artists and tracks
 
