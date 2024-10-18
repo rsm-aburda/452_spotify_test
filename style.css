@@ -41,4 +41,14 @@ body {
     stroke: white;
     stroke-width: 2;
   }
+  #visualization {
+    text-align: center;
+    margin-top: 20px;
+  }
+  p {
+    display: inline-block;
+    margin: 5px 10px;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
   
