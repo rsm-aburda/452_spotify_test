@@ -15,6 +15,8 @@ function getAccessToken() {
   const hash = window.location.hash.substring(1);
   const params = new URLSearchParams(hash);
   return params.get('access_token');
+  console.log('Access Token:', token); //log to verify token
+  return token;
 }
 
 // Fetch data from Spotify API
