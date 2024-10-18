@@ -3,6 +3,29 @@ const clientId = 'bceea381307146a283505191ab943fdd';
 const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/'; 
 const scopes = 'user-top-read';
 
+// Set Cookie
+function setCookie(name, value, days) {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/;Secure;SameSite=Lax`;
+}
+
+// Get Cookie
+function getCookie(name) {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [key, value] = cookie.trim().split('=');
+    if (key === name) return value;
+  }
+  return null;
+}
+
+// Delete Cookie
+function deleteCookie(name) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+}
+
 // Spotify Login - Redirect to Authorization Page
 document.getElementById('login-btn').addEventListener('click', () => {
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
@@ -11,17 +34,17 @@ document.getElementById('login-btn').addEventListener('click', () => {
   window.location.href = authUrl;
 });
 
-// Get Access Token
+// Get Access Token from URL Hash or Cookie
 function getAccessToken() {
   const hash = window.location.hash.substring(1);
   const params = new URLSearchParams(hash);
   let token = params.get('access_token');
 
   if (token) {
-    localStorage.setItem('spotify_access_token', token);
+    setCookie('spotify_access_token', token, 1); // Store in cookie for 1 day
     window.history.replaceState({}, document.title, window.location.pathname);
   } else {
-    token = localStorage.getItem('spotify_access_token');
+    token = getCookie('spotify_access_token');
   }
 
   return token;
@@ -30,7 +53,10 @@ function getAccessToken() {
 // Fetch Spotify Data
 async function fetchSpotifyData(endpoint) {
   const token = getAccessToken();
-  if (!token) return;
+  if (!token) {
+    console.warn('No access token found. Please log in.');
+    return [];
+  }
 
   try {
     const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
@@ -42,6 +68,13 @@ async function fetchSpotifyData(endpoint) {
       return data.items;
     } else {
       console.error('API Error:', await response.json());
+
+      // If the token is expired or invalid, clear the cookie and prompt login
+      if (response.status === 401) {
+        deleteCookie('spotify_access_token');
+        alert('Session expired. Please log in again.');
+        document.getElementById('login-btn').style.display = 'block';
+      }
       return [];
     }
   } catch (err) {
@@ -100,5 +133,7 @@ const token = getAccessToken();
 if (token) {
   document.getElementById('login-btn').style.display = 'none';
   initialize();
+} else {
+  document.getElementById('login-btn').style.display = 'block';
 }
 
