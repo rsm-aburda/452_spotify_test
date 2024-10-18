@@ -6,20 +6,21 @@
   <title>Spotify Music Viz</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-  <h1>Your Spotify Top 10 Artists and Tracks</h1>
+  <h1>Your Spotify <i class="fab fa-spotify"></i> Top 10 Artists and Tracks</h1>
   <button id="login-btn">Login with Spotify</button>
 
   <div id="visualization">
     <div class="section">
-      <h2>Top 10 Artists</h2>
+      <h2><i class="fas fa-user"></i> Top 10 Artists</h2>
       <ul id="artists-container" class="list-container"></ul>
     </div>
 
     <div class="section">
-      <h2>Top 10 Tracks</h2>
-      <ul id="tracks-container" class="list-container"></ul>
+      <h2><i class="fas fa-music"></i> Top 10 Tracks</h2>
+      <div id="tracks-container" class="cards-container"></div>
     </div>
   </div>
 

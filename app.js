@@ -1,47 +1,36 @@
 // Spotify App Config
-const clientId = 'bceea381307146a283505191ab943fdd'; // Replace with your Client ID
-const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/'; // Your GitHub Pages URL
-const scopes = 'user-top-read'; // Permission to access top artists and tracks
+const clientId = 'bceea381307146a283505191ab943fdd'; 
+const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/'; 
+const scopes = 'user-top-read';
 
 // Spotify Login - Redirect to Authorization Page
 document.getElementById('login-btn').addEventListener('click', () => {
-  console.log('Login button clicked!');
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&scope=${scopes}&response_type=token&show_dialog=true`;
   window.location.href = authUrl;
 });
 
-// Extract and Store the Access Token Safely
+// Get Access Token
 function getAccessToken() {
   const hash = window.location.hash.substring(1);
   const params = new URLSearchParams(hash);
   let token = params.get('access_token');
 
   if (token) {
-    console.log('Access Token Retrieved from URL:', token);
-    // Store the token in localStorage for persistence
     localStorage.setItem('spotify_access_token', token);
-    // Clear the token from the URL to keep things clean
     window.history.replaceState({}, document.title, window.location.pathname);
   } else {
-    // Try to retrieve the token from localStorage
     token = localStorage.getItem('spotify_access_token');
-    console.log('Retrieved token from localStorage:', token);
   }
 
   return token;
 }
 
-// Fetch Data from Spotify API
+// Fetch Spotify Data
 async function fetchSpotifyData(endpoint) {
   const token = getAccessToken();
-  if (!token) {
-    console.error('No access token found.');
-    return;
-  }
-
-  console.log(`Fetching ${endpoint} data...`);
+  if (!token) return;
 
   try {
     const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
@@ -50,11 +39,9 @@ async function fetchSpotifyData(endpoint) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`${endpoint} Data:`, data);
       return data.items;
     } else {
-      const error = await response.json();
-      console.error('API Error:', error);
+      console.error('API Error:', await response.json());
       return [];
     }
   } catch (err) {
@@ -62,58 +49,56 @@ async function fetchSpotifyData(endpoint) {
   }
 }
 
-// Display Data in Containers
-function displayData(data, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = ''; // Clear any previous content
+// Display Artists
+function displayArtists(artists) {
+  const container = document.getElementById('artists-container');
+  container.innerHTML = '';
 
-  if (!data || data.length === 0) {
-    console.log(`No data found for ${containerId}.`);
-    container.innerHTML = '<p>No data found.</p>';
-    return;
-  }
-
-  data.forEach(item => {
-    const element = document.createElement('p');
-    element.textContent = item.name; // Display the artist or track name
-    container.appendChild(element);
-  });
-}
-
-// Initialize the App and Fetch Data
-async function initialize() {
-  console.log('Initializing app...');
-
-  const artists = await fetchSpotifyData('artists');
-  displayData(artists, 'artists-container');
-
-  const tracks = await fetchSpotifyData('tracks');
-  displayData(tracks, 'tracks-container');
-}
-
-// Check if User is Authenticated and Initialize the App
-const token = getAccessToken();
-if (token) {
-  console.log('Access token found, hiding login button...');
-  document.getElementById('login-btn').style.display = 'none'; // Hide login button
-  initialize(); // Fetch and display data
-} else {
-  console.log('No access token found. Please log in.');
-}
-function displayData(data, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = ''; // Clear any previous content
-
-  if (!data || data.length === 0) {
-    console.log(`No data found for ${containerId}.`);
-    container.innerHTML = '<p>No data found.</p>';
-    return;
-  }
-
-  data.forEach(item => {
+  artists.forEach(artist => {
     const listItem = document.createElement('li');
-    listItem.innerHTML = `<a href="${item.external_urls.spotify}" target="_blank">${item.name}</a>`;
+    listItem.innerHTML = `<a href="${artist.external_urls.spotify}" target="_blank">${artist.name}</a>`;
     container.appendChild(listItem);
   });
+}
+
+// Display Tracks with Flip Card
+function displayTracks(tracks) {
+  const container = document.getElementById('tracks-container');
+  container.innerHTML = '';
+
+  tracks.forEach(track => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">
+          <img src="${track.album.images[0].url}" alt="${track.name}" />
+          <p>${track.name}</p>
+        </div>
+        <div class="card-back">
+          <p>${track.artists[0].name}</p>
+          <img src="${track.artists[0].images ? track.artists[0].images[0].url : ''}" alt="${track.artists[0].name}" />
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Initialize the App
+async function initialize() {
+  const artists = await fetchSpotifyData('artists');
+  displayArtists(artists);
+
+  const tracks = await fetchSpotifyData('tracks');
+  displayTracks(tracks);
+}
+
+// Check Token and Initialize App
+const token = getAccessToken();
+if (token) {
+  document.getElementById('login-btn').style.display = 'none';
+  initialize();
 }
 
