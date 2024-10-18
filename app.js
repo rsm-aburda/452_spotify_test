@@ -4,6 +4,7 @@ const scopes = 'user-top-read'; // Permission to access top artists and tracks
 
 // Spotify authentication - Implicit Grant Flow
 document.getElementById('login-btn').addEventListener('click', () => {
+  console.log('Login button clicked!');  // Log click
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&scope=${scopes}&response_type=token&show_dialog=true`;
@@ -15,9 +16,7 @@ function getAccessToken() {
   const hash = window.location.hash.substring(1);
   const params = new URLSearchParams(hash);
   const token = params.get('access_token');
-  
-  // Log the token to confirm it's being captured
-  console.log('Access Token:', token);
+  console.log('Access Token:', token);  // Log the token
 
   // Clear the token from the URL after extraction
   window.history.replaceState({}, document.title, window.location.pathname);
@@ -33,6 +32,8 @@ async function fetchSpotifyData(endpoint) {
     return;
   }
 
+  console.log(`Fetching ${endpoint} data...`);  // Log endpoint being fetched
+
   try {
     const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -40,15 +41,15 @@ async function fetchSpotifyData(endpoint) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`${endpoint} Data:`, data);  // Log the response data
+      console.log(`${endpoint} Data:`, data);  // Log the data received
       return data.items;
     } else {
       const error = await response.json();
-      console.error('API Error:', error);  // Log the error response
+      console.error('API Error:', error);  // Log the API error
       return [];
     }
   } catch (err) {
-    console.error('Fetch failed:', err);
+    console.error('Fetch failed:', err);  // Log fetch failure
   }
 }
 
@@ -57,7 +58,8 @@ function displayData(data, containerId) {
   const container = document.getElementById(containerId);
   container.innerHTML = ''; // Clear previous content
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
+    console.log(`No data found for ${containerId}.`);
     container.innerHTML = '<p>No data found.</p>';
     return;
   }
@@ -71,6 +73,8 @@ function displayData(data, containerId) {
 
 // Initialize the app
 async function initialize() {
+  console.log('Initializing app...');  // Log initialization
+
   const artists = await fetchSpotifyData('artists');
   displayData(artists, 'artists-container');
 
@@ -80,6 +84,9 @@ async function initialize() {
 
 // Check if the user is authenticated and initialize the app
 if (getAccessToken()) {
-  document.getElementById('login-btn').style.display = 'none'; // Hide login button if token exists
+  console.log('Access token found, hiding login button...');
+  document.getElementById('login-btn').style.display = 'none'; // Hide login button
   initialize(); // Fetch and display data
+} else {
+  console.log('No access token found. Please log in.');
 }
