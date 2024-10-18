@@ -14,8 +14,14 @@ document.getElementById('login-btn').addEventListener('click', () => {
 function getAccessToken() {
   const hash = window.location.hash.substring(1);
   const params = new URLSearchParams(hash);
-  return params.get('access_token');
-  console.log('Access Token:', token); //log to verify token
+  const token = params.get('access_token');
+  
+  // Log the token to confirm it's being captured
+  console.log('Access Token:', token);
+
+  // Clear the token from the URL after extraction
+  window.history.replaceState({}, document.title, window.location.pathname);
+
   return token;
 }
 
@@ -27,51 +33,53 @@ async function fetchSpotifyData(endpoint) {
     return;
   }
 
-  const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  try {
+    const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-  if (response.ok) {
-    return response.json();
-  } else {
-    console.error('Failed to fetch Spotify data');
-    return null;
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`${endpoint} Data:`, data);  // Log the response data
+      return data.items;
+    } else {
+      const error = await response.json();
+      console.error('API Error:', error);  // Log the error response
+      return [];
+    }
+  } catch (err) {
+    console.error('Fetch failed:', err);
   }
 }
 
-// Render circles with D3.js
-function renderData(data, container, type) {
-  container
-    .selectAll('circle')
-    .data(data)
-    .enter()
-    .append('circle')
-    .attr('cx', (d, i) => (i + 1) * 70)
-    .attr('cy', 75)
-    .attr('r', d => (type === 'artist' ? d.popularity / 2 : d.track_number * 2))
-    .attr('class', 'circle')
-    .append('title')
-    .text(d => (type === 'artist' ? d.name : `${d.name} - ${d.artists[0].name}`));
+// Display data inside the containers
+function displayData(data, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ''; // Clear previous content
+
+  if (data.length === 0) {
+    container.innerHTML = '<p>No data found.</p>';
+    return;
+  }
+
+  data.forEach(item => {
+    const element = document.createElement('p');
+    element.textContent = item.name; // Display the artist or track name
+    container.appendChild(element);
+  });
 }
 
 // Initialize the app
 async function initialize() {
-  const artistsContainer = d3.select('#artists-container');
-  const tracksContainer = d3.select('#tracks-container');
+  const artists = await fetchSpotifyData('artists');
+  displayData(artists, 'artists-container');
 
-  const artistsData = await fetchSpotifyData('artists');
-  if (artistsData && artistsData.items) {
-    renderData(artistsData.items, artistsContainer, 'artist');
-  }
-
-  const tracksData = await fetchSpotifyData('tracks');
-  if (tracksData && tracksData.items) {
-    renderData(tracksData.items, tracksContainer, 'track');
-  }
+  const tracks = await fetchSpotifyData('tracks');
+  displayData(tracks, 'tracks-container');
 }
 
 // Check if the user is authenticated and initialize the app
 if (getAccessToken()) {
-  document.getElementById('login-btn').style.display = 'none';
-  initialize();
+  document.getElementById('login-btn').style.display = 'none'; // Hide login button if token exists
+  initialize(); // Fetch and display data
 }
