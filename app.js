@@ -100,8 +100,20 @@ if (token) {
 } else {
   console.log('No access token found. Please log in.');
 }
-data.forEach(item => {
-  const element = document.createElement('p');
-  element.innerHTML = `<a href="${item.external_urls.spotify}" target="_blank">${item.name}</a>`;
-  container.appendChild(element);
-});
+function displayData(data, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ''; // Clear any previous content
+
+  if (!data || data.length === 0) {
+    console.log(`No data found for ${containerId}.`);
+    container.innerHTML = '<p>No data found.</p>';
+    return;
+  }
+
+  data.forEach(item => {
+    const listItem = document.createElement('li');
+    listItem.innerHTML = `<a href="${item.external_urls.spotify}" target="_blank">${item.name}</a>`;
+    container.appendChild(listItem);
+  });
+}
+
