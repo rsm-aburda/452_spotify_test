@@ -100,3 +100,8 @@ if (token) {
 } else {
   console.log('No access token found. Please log in.');
 }
+data.forEach(item => {
+  const element = document.createElement('p');
+  element.innerHTML = `<a href="${item.external_urls.spotify}" target="_blank">${item.name}</a>`;
+  container.appendChild(element);
+});
