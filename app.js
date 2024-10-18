@@ -101,4 +101,90 @@ if (token) {
   document.getElementById('login-btn').style.display = 'none';
   initialize();
 }
+window.onSpotifyWebPlaybackSDKReady = () => {
+  const token = getAccessToken();
+  const player = new Spotify.Player({
+    name: 'Spotify Web Player',
+    getOAuthToken: cb => { cb(token); },
+    volume: 0.5
+  });
+
+  // Error handling
+  player.addListener('initialization_error', ({ message }) => { console.error(message); });
+  player.addListener('authentication_error', ({ message }) => { console.error(message); });
+  player.addListener('account_error', ({ message }) => { console.error(message); });
+  player.addListener('playback_error', ({ message }) => { console.error(message); });
+
+  // Connect to the player!
+  player.connect();
+
+  // Function to play a specific track
+  function playTrack(trackUri) {
+    fetch(`https://api.spotify.com/v1/me/player/play`, {
+      method: 'PUT',
+      body: JSON.stringify({ uris: [trackUri] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
+
+  // Modify your track cards to include a play button
+  function displayTracks(tracks) {
+    const container = document.getElementById('tracks-container');
+    container.innerHTML = '';
+
+    tracks.forEach(track => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="card-front">
+            <img src="${track.album.images[0].url}" alt="${track.name}" />
+            <p>${track.name}</p>
+            <button onclick="playTrack('${track.uri}')">Play</button>
+          </div>
+          <div class="card-back">
+            <p>${track.artists[0].name}</p>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  initialize(); // Make sure this is called
+};
+function displayTracks(tracks) {
+  const container = document.getElementById('tracks-container');
+  container.innerHTML = '';
+
+  tracks.forEach(track => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">
+          <img src="${track.album.images[0].url}" alt="${track.name}" />
+          <p>${track.name}</p>
+        </div>
+        <div class="card-back">
+          <p>${track.artists[0].name}</p>
+          <iframe
+            src="https://open.spotify.com/embed/track/${track.id}"
+            width="100%"
+            height="80"
+            frameborder="0"
+            allowtransparency="true"
+            allow="encrypted-media">
+          </iframe>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
 
