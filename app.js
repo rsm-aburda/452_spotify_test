@@ -50,11 +50,14 @@ function getAccessToken() {
   return token;
 }
 
-// Fetch Spotify Data
+// Fetch Spotify Data with Cookie Handling
 async function fetchSpotifyData(endpoint) {
-  const token = getAccessToken();
+  const token = getAccessToken();  // Retrieve token from cookie or hash
+
   if (!token) {
     console.warn('No access token found. Please log in.');
+    deleteCookie('spotify_access_token');  // Clear any stale cookies
+    window.location.href = redirectUri;  // Redirect to login
     return [];
   }
 
@@ -65,22 +68,23 @@ async function fetchSpotifyData(endpoint) {
 
     if (response.ok) {
       const data = await response.json();
+      console.log(`Fetched ${endpoint}:`, data);  // Debugging log
       return data.items;
+    } else if (response.status === 401) {
+      console.warn('Token expired or invalid. Redirecting to login...');
+      deleteCookie('spotify_access_token');  // Clear the token cookie
+      alert('Session expired. Please log in again.');
+      window.location.href = redirectUri;  // Redirect to login
     } else {
       console.error('API Error:', await response.json());
-
-      // If the token is expired or invalid, clear the cookie and prompt login
-      if (response.status === 401) {
-        deleteCookie('spotify_access_token');
-        alert('Session expired. Please log in again.');
-        document.getElementById('login-btn').style.display = 'block';
-      }
       return [];
     }
   } catch (err) {
     console.error('Fetch failed:', err);
+    return [];
   }
 }
+
 
 // Display Artists
 function displayArtists(artists) {
