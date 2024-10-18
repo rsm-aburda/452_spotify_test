@@ -1,12 +1,12 @@
 // Spotify App Config
-const clientId = 'bceea381307146a283505191ab943fdd'; 
-const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/'; 
-const scopes = 'user-top-read';
+const clientId = 'bceea381307146a283505191ab943fdd';
+const redirectUri = 'https://rsm-aburda.github.io/452_spotify_test/';
+const scopes = 'user-top-read user-library-read'; // Add any extra scopes as needed
 
 // Set Cookie
 function setCookie(name, value, days) {
   const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
   const expires = `expires=${date.toUTCString()}`;
   document.cookie = `${name}=${value};${expires};path=/;Secure;SameSite=Lax`;
 }
@@ -28,6 +28,7 @@ function deleteCookie(name) {
 
 // Spotify Login - Redirect to Authorization Page
 document.getElementById('login-btn').addEventListener('click', () => {
+  deleteCookie('spotify_access_token'); // Clear stale tokens before login
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&scope=${scopes}&response_type=token&show_dialog=true`;
@@ -41,10 +42,12 @@ function getAccessToken() {
   let token = params.get('access_token');
 
   if (token) {
-    setCookie('spotify_access_token', token, 1); // Store in cookie for 1 day
-    window.history.replaceState({}, document.title, window.location.pathname);
+    console.log('New access token retrieved:', token);
+    setCookie('spotify_access_token', token, 1); // Store token for 1 day
+    window.history.replaceState({}, document.title, window.location.pathname); // Clean URL
   } else {
     token = getCookie('spotify_access_token');
+    console.log('Access token from cookie:', token);
   }
 
   return token;
@@ -52,14 +55,16 @@ function getAccessToken() {
 
 // Fetch Spotify Data with Cookie Handling
 async function fetchSpotifyData(endpoint) {
-  const token = getAccessToken();  // Retrieve token from cookie or hash
+  const token = getAccessToken();
 
   if (!token) {
-    console.warn('No access token found. Please log in.');
-    deleteCookie('spotify_access_token');  // Clear any stale cookies
-    window.location.href = redirectUri;  // Redirect to login
+    console.warn('No access token found. Redirecting to login...');
+    deleteCookie('spotify_access_token');
+    window.location.href = redirectUri;
     return [];
   }
+
+  console.log(`Using token for ${endpoint}:`, token);
 
   try {
     const response = await fetch(`https://api.spotify.com/v1/me/top/${endpoint}?limit=10`, {
@@ -68,13 +73,13 @@ async function fetchSpotifyData(endpoint) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`Fetched ${endpoint}:`, data);  // Debugging log
+      console.log(`Fetched ${endpoint}:`, data);
       return data.items;
     } else if (response.status === 401) {
       console.warn('Token expired or invalid. Redirecting to login...');
-      deleteCookie('spotify_access_token');  // Clear the token cookie
+      deleteCookie('spotify_access_token');
       alert('Session expired. Please log in again.');
-      window.location.href = redirectUri;  // Redirect to login
+      window.location.href = redirectUri;
     } else {
       console.error('API Error:', await response.json());
       return [];
@@ -84,7 +89,6 @@ async function fetchSpotifyData(endpoint) {
     return [];
   }
 }
-
 
 // Display Artists
 function displayArtists(artists) {
@@ -140,4 +144,3 @@ if (token) {
 } else {
   document.getElementById('login-btn').style.display = 'block';
 }
-
